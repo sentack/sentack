@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="160" viewBox="0 0 900 160" role="img" aria-labelledby="title">
+<title id="title">Let's build something great — sentack.dev</title>
+<style>
+  .mono { font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; }
+  .sans { font-family: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+  .serif { font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif; font-style: italic; }
+  .breathe { animation: breathe 6s ease-in-out infinite; }
+  .pulse { animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity: .5; } }
+  @keyframes pulse { 50% { fill-opacity: .3; } }
+</style>
+<defs>
+  <clipPath id="frame"><rect width="900" height="160" rx="20"/></clipPath>
+  <radialGradient id="glow" cx=".5" cy="1.05" r=".6">
+    <stop offset="0" stop-color="#ff5f2e" stop-opacity=".32"/>
+    <stop offset=".5" stop-color="#ff5f2e" stop-opacity=".06"/>
+    <stop offset="1" stop-color="#ff5f2e" stop-opacity="0"/>
+  </radialGradient>
+  <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+    <path d="M30 0H0V30" fill="none" stroke="#ffffff" stroke-opacity=".04"/>
+  </pattern>
+</defs>
+<g clip-path="url(#frame)">
+  <rect width="900" height="160" fill="#070709"/>
+  <rect width="900" height="160" fill="url(#grid)"/>
+  <rect class="breathe" width="900" height="160" fill="url(#glow)"/>
+  <text x="450" y="78" class="sans" font-size="38" font-weight="600" letter-spacing="-1" fill="#f3f1ec" text-anchor="middle">Let's build <tspan class="serif" font-size="44" font-weight="400" fill="#ff5f2e">something great.</tspan></text>
+  <text x="450" y="118" class="mono" font-size="12" letter-spacing="2.5" fill="#6d6b74" text-anchor="middle">HAVE A PROJECT, A ROLE OR AN IDEA?  <tspan fill="#f3f1ec">SENTACK.DEV</tspan> <tspan class="pulse" fill="#ff5f2e">→</tspan></text>
+</g>
+<rect x=".5" y=".5" width="899" height="159" rx="19.5" fill="none" stroke="#ffffff" stroke-opacity=".08"/>
+</svg>

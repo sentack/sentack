@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="56" viewBox="0 0 900 56" role="img" aria-labelledby="title">
+<title id="title">01 / Tech Stack</title>
+<style>
+  .mono { font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; }
+  .serif { font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif; font-style: italic; }
+  .grow { animation: grow 1.4s cubic-bezier(.16, 1, .3, 1) both; transform-box: fill-box; transform-origin: left; }
+  @keyframes grow { from { transform: scaleX(0); } }
+</style>
+<defs>
+  <linearGradient id="rule" x1="0" x2="1">
+    <stop offset="0" stop-color="#ff5f2e" stop-opacity=".8"/><stop offset="1" stop-color="#ff5f2e" stop-opacity="0"/>
+  </linearGradient>
+</defs>
+<rect x=".5" y=".5" width="899" height="55" rx="14" fill="#0c0c0f" stroke="#ffffff" stroke-opacity=".07"/>
+<text x="24" y="33" class="mono" font-size="13" fill="#ff5f2e">01</text>
+<text x="48" y="33" class="mono" font-size="13" fill="#45444b">/</text>
+<text x="64" y="33" class="mono" font-size="13" letter-spacing="3" fill="#f3f1ec">TECH STACK</text>
+<rect class="grow" x="200" y="27.5" width="520" height="1" fill="url(#rule)"/>
+<text x="876" y="34" class="serif" font-size="18" fill="#a3a1a8" text-anchor="end">what I build with</text>
+</svg>
