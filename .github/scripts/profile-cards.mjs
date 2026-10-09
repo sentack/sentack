@@ -52,7 +52,7 @@ const REPOS = `query($login: String!, $after: String) {
       totalCount
       pageInfo { hasNextPage endCursor }
       nodes {
-        stargazerCount
+        nameWithOwner stargazerCount
         languages(first: 25, orderBy: { field: SIZE, direction: DESC }) { edges { size node { name color } } }
       }
     }
@@ -63,7 +63,11 @@ const CONTRIBUTIONS = `query($login: String!, $from: DateTime!, $to: DateTime!) 
   user(login: $login) {
     contributionsCollection(from: $from, to: $to) {
       totalCommitContributions totalPullRequestContributions
-      totalPullRequestReviewContributions totalIssueContributions
+      totalPullRequestReviewContributions totalIssueContributions restrictedContributionsCount
+      commitContributionsByRepository(maxRepositories: 100) { repository { nameWithOwner } }
+      pullRequestContributionsByRepository(maxRepositories: 100) { repository { nameWithOwner } }
+      pullRequestReviewContributionsByRepository(maxRepositories: 100) { repository { nameWithOwner } }
+      issueContributionsByRepository(maxRepositories: 100) { repository { nameWithOwner } }
       contributionCalendar { totalContributions weeks { contributionDays { date contributionCount } } }
     }
   }
@@ -93,6 +97,8 @@ async function fetchData() {
   // contributionsCollection spans at most a year, so walk back from today to the join date.
   const created = new Date(user.createdAt);
   const days = new Map();
+  // Owned repos plus every repo contributed to, so org work counts too.
+  const touched = new Set(repos.map((r) => r.nameWithOwner));
   let year;
   for (let to = new Date(); to > created; ) {
     const from = new Date(Math.max(to - 365 * DAY, created));
@@ -102,12 +108,21 @@ async function fetchData() {
       to: to.toISOString(),
     });
     year ??= c;
+    for (const key of ['commit', 'pullRequest', 'pullRequestReview', 'issue']) {
+      for (const { repository } of c[`${key}ContributionsByRepository`]) touched.add(repository.nameWithOwner);
+    }
     for (const week of c.contributionCalendar.weeks) {
       for (const { date, contributionCount } of week.contributionDays) {
         days.set(date, Math.max(days.get(date) ?? 0, contributionCount));
       }
     }
     to = from;
+  }
+  if (year.restrictedContributionsCount) {
+    console.log(
+      `::warning::${year.restrictedContributionsCount} private contributions are hidden from this token, so commits, ` +
+        'PRs, reviews and repos undercount. Add a classic PAT (repo, read:user, read:org) as the PROFILE_TOKEN secret.',
+    );
   }
 
   const sortedDays = [...days].sort(([a], [b]) => (a < b ? -1 : 1)).map(([date, count]) => ({ date, count }));
@@ -125,7 +140,8 @@ async function fetchData() {
       reviews: year.totalPullRequestReviewContributions,
       issues: year.totalIssueContributions,
     },
-    repos: user.repositories.totalCount,
+    repos: touched.size,
+    ownedRepos: user.repositories.totalCount,
     stars: repos.reduce((n, r) => n + r.stargazerCount, 0),
     followers: user.followers.totalCount,
     languages: [...langs.values()].sort((a, b) => b.size - a.size),
@@ -223,7 +239,7 @@ function overview(d) {
     ['COMMITS', fmt(d.year.commits), 'last 12 months'],
     ['PULL REQUESTS', fmt(d.year.prs), 'last 12 months'],
     ['CODE REVIEWS', fmt(d.year.reviews), 'last 12 months'],
-    ['REPOSITORIES', fmt(d.repos), `${fmt(d.stars)} stars earned`],
+    ['REPOSITORIES', fmt(d.repos), `${fmt(d.ownedRepos)} owned · ${fmt(d.stars)} stars`],
   ];
   const gap = 12, ty = 196, th = 88;
   const tw = (W - PAD * 2 - gap * (tiles.length - 1)) / tiles.length;
@@ -381,7 +397,7 @@ function languages(d) {
   return card({
     h,
     label: 'LANGUAGES · BY CODE VOLUME',
-    meta: `${all.length} languages · ${fmt(d.repos)} repositories`,
+    meta: `${all.length} languages · ${fmt(d.ownedRepos)} repositories`,
     title: `Languages across @${d.login}'s repositories: ${shown.slice(0, 5).map((l) => `${l.name} ${label(pct(l))}`).join(', ')}`,
     body: `
 <defs><clipPath id="bar"><rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="6">
