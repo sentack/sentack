@@ -118,10 +118,18 @@ async function fetchData() {
     }
     to = from;
   }
-  if (year.restrictedContributionsCount) {
+  const hidden = year.restrictedContributionsCount;
+  if (hidden && TOKEN.startsWith('ghs_')) {
     console.log(
-      `::warning::${year.restrictedContributionsCount} private contributions are hidden from this token, so commits, ` +
-        'PRs, reviews and repos undercount. Add a classic PAT (repo, read:user, read:org) as the PROFILE_TOKEN secret.',
+      `::warning::${hidden} private contributions are hidden from the default Actions token, so commits, PRs, ` +
+        'reviews and repos undercount. Add a classic PAT (repo, read:user, read:org) as the PROFILE_TOKEN secret.',
+    );
+  } else if (hidden) {
+    console.log(
+      `::notice::${hidden} contributions are in private repos this token can't open: repos you've lost access to, ` +
+        'or orgs that need SSO authorization for the token or block classic PATs. They stay in the calendar total ' +
+        'but not in the commit, PR, review and repo breakdown.' +
+        (TOKEN.startsWith('github_pat_') ? ' Fine-grained tokens only see one owner; use a classic PAT.' : ''),
     );
   }
 
