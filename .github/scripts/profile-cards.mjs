@@ -417,6 +417,97 @@ ${legend}`,
   });
 }
 
+// [label, simple-icons slug, brand color]; dark brand marks fall back to the foreground color.
+const STACK = [
+  ['Frontend', [
+    ['React', 'react', '#61DAFB'],
+    ['Next.js', 'nextdotjs'],
+    ['TypeScript', 'typescript', '#3178C6'],
+    ['Framer Motion', 'framer'],
+    ['Three.js', 'threedotjs'],
+  ]],
+  ['Backend & APIs', [
+    ['Node.js', 'nodedotjs', '#5FA04E'],
+    ['NestJS', 'nestjs', '#E0234E'],
+    ['Express.js', 'express'],
+    ['PostgreSQL', 'postgresql', '#4169E1'],
+    ['MySQL', 'mysql', '#7AA7D2'],
+    ['Prisma', 'prisma'],
+    ['TypeORM', 'typeorm', '#FE0803'],
+  ]],
+  ['Cloud & DevOps', [
+    ['Docker', 'docker', '#2496ED'],
+    ['Google Cloud', 'googlecloud', '#4285F4'],
+    ['Render', 'render'],
+    ['PM2', 'pm2'],
+    ['CI/CD', 'githubactions', '#2088FF'],
+  ]],
+  ['AI Tooling & APIs', [
+    ['Cursor', 'cursor'],
+    ['Claude Code', 'claude', '#D97757'],
+    ['Gemini API', 'googlegemini', '#8E75B2'],
+  ]],
+];
+
+async function iconPath(slug) {
+  try {
+    const res = await fetch(`https://cdn.jsdelivr.net/npm/simple-icons@16/icons/${slug}.svg`);
+    return res.ok ? (await res.text()).match(/ d="([^"]+)"/)?.[1] : null;
+  } catch {
+    return null; // A missing icon shouldn't sink the run; the chip just renders without it.
+  }
+}
+
+async function stack() {
+  const items = STACK.flatMap(([, tools]) => tools);
+  const icons = new Map(await Promise.all(items.map(async ([, slug]) => [slug, await iconPath(slug)])));
+
+  const chipH = 34, gap = 8, rowPad = 22, x0 = PAD + 206, x1 = W - PAD;
+  // Mono labels keep chip widths predictable: 0.6em per glyph.
+  const chipW = (label) => 36 + label.length * 7.2 + 14;
+  let y = 64, n = 0;
+  const rows = STACK.map(([domain, tools], i) => {
+    let x = x0, line = 0;
+    const chips = tools.map(([label, slug, color]) => {
+      const w = chipW(label);
+      if (x + w > x1 && x > x0) (x = x0), line++;
+      const chip = { x, line, w, label, slug, color: color ?? C.fg };
+      x += w + gap;
+      return chip;
+    });
+    const top = y + rowPad;
+    const height = (line + 1) * chipH + line * gap;
+    y = top + height + rowPad;
+    const divider = i < STACK.length - 1 ? `<line x1="${PAD}" y1="${y + 0.5}" x2="${x1}" y2="${y + 0.5}" stroke="${C.line}"/>` : '';
+    return `
+<g class="rise" style="animation-delay:${i * 0.08}s">
+  <text x="${PAD}" y="${top + 16}" class="mono" font-size="11" fill="${C.ember}">${String(i + 1).padStart(2, '0')}</text>
+  <text x="${PAD + 26}" y="${top + 16}" class="mono" font-size="12" letter-spacing="2" fill="${C.fg}">${esc(domain.toUpperCase())}</text>
+  <text x="${PAD + 26}" y="${top + 34}" class="sans" font-size="12" fill="${C.subtle}">${tools.length} tools</text>
+</g>
+${chips
+  .map((c) => {
+    const cy = top + c.line * (chipH + gap);
+    const d = icons.get(c.slug);
+    return `<g class="rise" style="animation-delay:${0.15 + n++ * 0.035}s">
+  <rect x="${r1(c.x)}" y="${cy}" width="${r1(c.w)}" height="${chipH}" rx="10" fill="${C.tile}" stroke="${C.line}"/>
+  ${d ? `<path d="${d}" fill="${c.color}" transform="translate(${r1(c.x + 13)} ${cy + 9.5}) scale(.625)"/>` : ''}
+  <text x="${r1(c.x + 36)}" y="${cy + 21.5}" class="mono" font-size="12" fill="${C.fg}">${esc(c.label)}</text>
+</g>`;
+  })
+  .join('\n')}
+${divider}`;
+  });
+
+  return card({
+    h: y + 12,
+    label: `STACK · ${STACK.length} DOMAINS`,
+    meta: `${items.length} technologies`,
+    title: `Tech stack: ${items.map(([label]) => label).join(', ')}`,
+    body: rows.join('\n'),
+  });
+}
+
 // Platane/snk draws on a transparent canvas; give it the same dark card as the rest.
 async function frameSnake(file) {
   if (!existsSync(file)) return;
@@ -433,6 +524,7 @@ async function frameSnake(file) {
 const data = process.env.DATA_FILE ? JSON.parse(await readFile(process.env.DATA_FILE, 'utf8')) : await fetchData();
 await mkdir(OUT, { recursive: true });
 const cards = {
+  'stack.svg': await stack(),
   'overview.svg': overview(data),
   'contributions.svg': contributions(data),
   'languages.svg': languages(data),
